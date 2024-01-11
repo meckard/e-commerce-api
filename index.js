@@ -1,11 +1,22 @@
 const express = require('express')
 const app = express()
-const port = 3003
+const { PORT } = require('./config')
+const bodyParser = require('body-parser')
+const db = require('./queries.js')
+
+app.use(bodyParser.json())
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}`)
 })
+
+app.get('/users', db.getUsers)
