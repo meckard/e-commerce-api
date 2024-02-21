@@ -1,14 +1,12 @@
 const express = require('express')
 const router = express.Router()
-const db = require('../queries')
-const util = require('../Utils/utils.js')
+const util = require('../Utils/authUtils.js')
 const bodyParser = require('body-parser')
-const passportSetup = require('../Loaders/passport.js')
-const passport = require('passport')
+
 
 const jsonParser = bodyParser.json()
 
-module.exports = (app) => {
+module.exports = (app, passport) => {
 
     app.use(jsonParser)
 
@@ -37,15 +35,15 @@ module.exports = (app) => {
         }
     })
 
-    router.post('/login',  async (req, res, next) => {
+    router.post('/login', passport.authenticate('local'), async (req, res, next) => {
         try {
             const { email, password } = req.body
-
-            console.log(email, password, util.login)
 
             const response = await util.login(email, password)
 
             res.status(200).send(response)
+            console.log('Logged In!')
+            console.log(req.user)
         } catch (err) {
             console.log(err)
         }

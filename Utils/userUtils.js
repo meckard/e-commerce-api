@@ -32,42 +32,15 @@ const bcrypt = require('bcrypt')
         return null
     }
 
-    const login = async (email, password) => {
-           try {
+    const updateUser = async (column, info, userId) => {
+        const statement = `UPDATE public.user SET ${column} = $1::text WHERE id = $2::int`
+        const values = [column, info, userId]
 
-            const userExists = await findUserByEmail(email)
-                if(!userExists) {
-                throw createError(401, 'Incorrect username or password')
-            }
+        const result = await db.query(statement, [info, userId])
 
-            const passwordCompare = await bcrypt.compare(password, userExists.password, function(err, result) {
-                if(err) {
-                    console.log(err)
-                }
-                return result
-            })
-        } catch(err) {
-            console.log(err)
-        }
+        return result
 
-           
     }
-
-    const register = async (email, firstName, lastName) => {
-        
-
-       try {
-        const userExists = await findUserByEmail(email)
-
-        if(userExists) {
-            throw createError(409, 'Email already in use')
-        }
-
-        return await createUser(email, firstName, lastName)
-       } catch(err) {
-        throw createError(500, err)
-    }
-    } 
 
     const updatePassword = async (userId, newPassword, email) => {
         console.log(userId)
@@ -93,9 +66,8 @@ const bcrypt = require('bcrypt')
     }
 
     module.exports = {
-        register,
         findUserByEmail,
         createUser,
-        login,
-        updatePassword
+        updateUser,
+        updatePassword,
     }

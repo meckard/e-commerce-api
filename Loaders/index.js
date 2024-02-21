@@ -3,12 +3,14 @@ const authLoader = require('../Routes/authRouter.js')
 const passportLoader = require('../Loaders/passport.js')
 const expressLoader = require('./express.js')
 const productsLoader = require('../Routes/productRouter.js')
+const cartLoader = require('../Routes/cartRouter.js')
 
 module.exports = async (app) => {
 
-    await expressLoader(app)
-    await passportLoader(app)
+    const expressApp = await expressLoader(app)
+    const passport = await passportLoader(expressApp)
     await userLoader(app)
     await productsLoader(app)
-    await authLoader(app)
+    await authLoader(app, passport)
+    await cartLoader(app)
 }

@@ -1,7 +1,7 @@
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
 const db = require('../queries')
-const util = require('../Utils/utils')
+const util = require('../Utils/authUtils')
 const createError = require('http-errors')
 const bcrypt = require('bcrypt')
 
@@ -18,12 +18,11 @@ module.exports = (app) => {
     })
 
     passport.use(new LocalStrategy(
-        async (email, password, done) => {
+        {usernameField: "email"},
+        async (username, password, done) => {
            try {
-
-            console.log(email)
             
-            const login = await util.login(email, password)
+            const login = await util.login(username, password)
 
             return done(null, login)
 
