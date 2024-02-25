@@ -1,5 +1,45 @@
 const db = require('../queries')
 
+const getOrders = async () => {
+    const statement = 'SELECT * FROM public.orders'
+
+    const response = await db.query(statement, [])
+
+    if(response.rows?.length) {
+        return response.rows
+    }
+}
+
+const getPendingOrders = async () => {
+    const statement = 'SELECT * FROM public.orders WHERE status = "Pending"'
+
+    const response = await db.query(statement, [])
+
+    if(response.rows?.length) {
+        return response.rows
+    }
+}
+
+const getCompletedOrders = async () => {
+    const statement = 'SELECT * FROM public. WHERE status = "Completed"'
+
+    const response = await db.query(statement, [])
+
+    if(response.rows?.length) {
+        return response.rows
+    }
+}
+
+const getOrderById = async (id) => {
+    const statement = 'SELECT * FROM public.orders WHERE id = $1'
+
+    const response = await db.query(statement, [id])
+
+    if(response.rows?.length) {
+        return response.rows
+    }
+}
+
 const createOrder = async (total, userId) => {
     const statement = 'INSERT INTO public.order (total, user_id) VALUES($1, $2)'
     const values = [total, userId]
@@ -37,4 +77,14 @@ const addItems = async (items) => {
     })
 
     return itemQuery
+}
+
+module.exports = {
+    getOrders,
+    getOrderById,
+    getCompletedOrders,
+    getPendingOrders,
+    createOrder,
+    deleteOrder,
+    addItems
 }
