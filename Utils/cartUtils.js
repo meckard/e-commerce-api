@@ -60,9 +60,24 @@ const deleteItemFromCart = async (itemId) => {
     return result
 }
 
+const getItemPrice = async (cartId) => {
+    const statement = 'SELECT public.cart_item.quantity, public.cart_item.id, public.products.id, public.products.price FROM public.cart_item INNER JOIN public.products * ON public.products.id = public.cart_item.product_id WHERE cart_id = $1'
+    const values = [cartId]
+
+    const response = await db.query(statement, values)
+
+    if(response.rows?.length) {
+        return response.rows
+    }
+
+    return []
+
+}
+
 module.exports = {
     newCart,
     findCartByUser,
+    getItemPrice,
     findItemsByCart,
     addItemToCart,
     deleteItemFromCart

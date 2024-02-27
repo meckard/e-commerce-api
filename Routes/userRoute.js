@@ -3,6 +3,7 @@ const router = express.Router()
 const db = require('../queries')
 const bodyParser = require('body-parser')
 const util = require('../Utils/userUtils')
+const total = require('../Utils/cartUtils')
 
 const jsonParser = bodyParser.json()
 

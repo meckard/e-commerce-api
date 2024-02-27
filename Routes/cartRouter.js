@@ -61,5 +61,17 @@ module.exports = (app) => {
         }
     })
 
+    router.post('/checkout', async (req, res, next) => {
+        //const { id } = req.user
+        //const { cartId } = req.body
+
+        const getItems = await util.getItemPrice(2)
+
+        const totalItems = getItems.reduce((total, item) => {
+            return total += Number(item.price)
+        }, 0)
+
+        console.log(totalItems)
+    })
 
 }
