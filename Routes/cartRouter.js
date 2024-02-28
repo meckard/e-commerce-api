@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
-const util = require('../Utils/cartUtils')
+const cartUtil = require('../Utils/cartUtils')
+const orderUtil = require('../Utils/orderUtils')
 
 module.exports = (app) => {
 
@@ -9,10 +10,10 @@ module.exports = (app) => {
 
     router.get('/my_cart', async (req, res, next) => {
         try{
-            const cart = await util.findCartByUser(req.user.id)
+            const cart = await cartUtil.findCartByUser(req.user.id)
 
             if(!cart) {
-                const result = await util.newCart(req.user.id)
+                const result = await cartUtil.newCart(req.user.id)
 
                 return result
             }
@@ -29,15 +30,15 @@ module.exports = (app) => {
         const { productId } = req.body
 
         try {
-            const cart = await util.findCartByUser(req.user.id)
+            const cart = await cartUtil.findCartByUser(req.user.id)
 
             if(!cart) {
-                const result = await util.newCart(req.user.id)
+                const result = await cartUtil.newCart(req.user.id)
 
                 return result
             }
 
-            const addItem = await util.addItemToCart(productId, cart.id)
+            const addItem = await cartUtil.addItemToCart(productId, cart.id)
             res.status(200).send(addItem)
         } catch(err) {
             next(err)
@@ -52,7 +53,7 @@ module.exports = (app) => {
         console.log(req.user.id)
 
         try {
-            const deleteItem = await util.deleteItemFromCart(itemId)
+            const deleteItem = await cartUtil.deleteItemFromCart(itemId)
 
             console.log(deleteItem)
             res.status(200).send(deleteItem)
@@ -62,16 +63,38 @@ module.exports = (app) => {
     })
 
     router.post('/checkout', async (req, res, next) => {
-        //const { id } = req.user
-        //const { cartId } = req.body
+        const { userId } = req.user
+        const { cartId } = req.body
 
-        const getItems = await util.getItemPrice(2)
+        try{
+        const getItems = await util.getItemPrice(cartId)
 
-        const totalItems = getItems.reduce((total, item) => {
+        const total = getItems.reduce((total, item) => {
             return total += Number(item.price)
         }, 0)
 
-        console.log(totalItems)
+        const newOrder = await orderUtil.createOrder(total, userId)
+        const items = getItems.map((item) => {
+           [{
+            quantity: item.quantity,
+            price: item.price,
+            orderId: newOrder.id,
+            productId: item.productId
+           }]
+        })
+
+        const addItems = await orderUtil.addItems(items)
+
+        //add payment logic at some point
+
+        cartUtil.checkedOut(cartId)
+        const order = orderUtil.completeOrder(newOrder.id)
+
+        return order
+    } catch(err) {
+        next(err)
+    }
+
     })
 
 }

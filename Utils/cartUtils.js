@@ -61,7 +61,7 @@ const deleteItemFromCart = async (itemId) => {
 }
 
 const getItemPrice = async (cartId) => {
-    const statement = 'SELECT public.cart_item.quantity, public.cart_item.id, public.products.id, public.products.price FROM public.cart_item INNER JOIN public.products * ON public.products.id = public.cart_item.product_id WHERE cart_id = $1'
+    const statement = 'SELECT public.cart_item.quantity, public.cart_item.id AS "item_id", public.products.id AS "product_id", public.products.price FROM public.cart_item INNER JOIN public.products * ON public.products.id = public.cart_item.product_id WHERE cart_id = $1'
     const values = [cartId]
 
     const response = await db.query(statement, values)
@@ -74,11 +74,26 @@ const getItemPrice = async (cartId) => {
 
 }
 
+const checkedOut = async (cartId) => {
+    const statement = 'UPDATE public.cart SET checked_out = true WHERE id = $1'
+    const values = [cartId]
+
+    const response = await db.query(statement, values)
+
+    if(response.rows?.length) {
+        return response.rows
+        console.log('Checked out!')
+    }
+
+    return null
+}
+
 module.exports = {
     newCart,
     findCartByUser,
     getItemPrice,
     findItemsByCart,
+    checkedOut,
     addItemToCart,
     deleteItemFromCart
 }

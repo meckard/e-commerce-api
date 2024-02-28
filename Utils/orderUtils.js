@@ -79,11 +79,26 @@ const addItems = async (items) => {
     return itemQuery
 }
 
+const completeOrder = async (orderId) => {
+    const statement = 'UPDATE public.order SET status = "complete" WHERE id = $1'
+    const values = [orderId]
+
+    const response = await db.query(statement, values)
+
+    if (response.rows?.length) {
+        return response.rows
+        console.log('Order completed')
+    }
+
+    return null
+}
+
 module.exports = {
     getOrders,
     getOrderById,
     getCompletedOrders,
     getPendingOrders,
+    completeOrder,
     createOrder,
     deleteOrder,
     addItems
