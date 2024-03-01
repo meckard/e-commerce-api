@@ -63,24 +63,25 @@ module.exports = (app) => {
     })
 
     router.post('/checkout', async (req, res, next) => {
-        const { userId } = req.user
+        const { userId } = req.user.id
         const { cartId } = req.body
 
         try{
-        const getItems = await util.getItemPrice(cartId)
+        const getItems = await cartUtil.getItemPrice(cartId)
 
         const total = getItems.reduce((total, item) => {
             return total += Number(item.price)
         }, 0)
 
-        const newOrder = await orderUtil.createOrder(total, userId)
-        const items = getItems.map((item) => {
-           [{
-            quantity: item.quantity,
+        const newOrder = await orderUtil.createOrder(total, req.user.id)
+
+        const items = await getItems.map((item) => {
+        return [{
+            quantity: Number(item.quantity),
             price: item.price,
-            orderId: newOrder.id,
-            productId: item.productId
-           }]
+            orderId: newOrder[0].id,
+            productId: item.product_id
+            },]
         })
 
         const addItems = await orderUtil.addItems(items)
@@ -88,9 +89,10 @@ module.exports = (app) => {
         //add payment logic at some point
 
         cartUtil.checkedOut(cartId)
-        const order = orderUtil.completeOrder(newOrder.id)
+        const order = await orderUtil.completeOrder(newOrder[0].id)
+        console.log(order)
 
-        return order
+        res.status(200).send(await orderUtil.getOrderById(newOrder[0].id))
     } catch(err) {
         next(err)
     }

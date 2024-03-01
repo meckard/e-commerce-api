@@ -31,7 +31,7 @@ const getCompletedOrders = async () => {
 }
 
 const getOrderById = async (id) => {
-    const statement = 'SELECT * FROM public.orders WHERE id = $1'
+    const statement = 'SELECT * FROM public.order WHERE id = $1'
 
     const response = await db.query(statement, [id])
 
@@ -41,10 +41,10 @@ const getOrderById = async (id) => {
 }
 
 const createOrder = async (total, userId) => {
-    const statement = 'INSERT INTO public.order (total, user_id) VALUES($1, $2)'
+    const statement = `INSERT INTO public.order (total, user_id) VALUES (${total}, ${userId}) RETURNING *`
     const values = [total, userId]
 
-    const response = await db.query(statement, values)
+    const response = await db.query(statement, [])
 
     if(response.rows?.length) {
         return response.rows
@@ -63,11 +63,14 @@ const deleteOrder = async (orderId) => {
 }
 
 const addItems = async (items) => {
+
+    console.log(items)
    const itemQuery = items.map( async (item) => {
-        const statment = 'INSERT INTO public.order_item (quantity, price, order_id, product_id VALUES($1, $2, $3, $4)'
+        console.log(item[0])
+        const statement = `INSERT INTO public.order_item (quantity, price, order_id, product_id) VALUES (${item[0].quantity}, ${item[0].price}, ${item[0].orderId}, ${item[0].productId})`
         const values = [item.quantity, item.price, item.orderId, item.productId]
 
-        const response = await db.query(statment, values)
+        const response = await db.query(statement, [])
 
         if(response.rows?.length) {
             return response.rows
@@ -80,14 +83,14 @@ const addItems = async (items) => {
 }
 
 const completeOrder = async (orderId) => {
-    const statement = 'UPDATE public.order SET status = "complete" WHERE id = $1'
+    const statement = "UPDATE public.order SET status = 'complete' WHERE id = $1"
     const values = [orderId]
 
     const response = await db.query(statement, values)
 
     if (response.rows?.length) {
-        return response.rows
         console.log('Order completed')
+        return response.rows
     }
 
     return null
