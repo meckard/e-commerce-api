@@ -4,99 +4,92 @@ const cartUtil = require('../Utils/cartUtils')
 const orderUtil = require('../Utils/orderUtils')
 
 module.exports = (app) => {
+  app.use('/cart', router)
 
-    app.use('/cart', router)
+  router.get('/my_cart', async (req, res, next) => {
+    try {
+      const cart = await cartUtil.findCartByUser(req.user.id)
 
+      if (!cart) {
+        const result = await cartUtil.newCart(req.user.id)
 
-    router.get('/my_cart', async (req, res, next) => {
-        try{
-            const cart = await cartUtil.findCartByUser(req.user.id)
+        return result
+      }
 
-            if(!cart) {
-                const result = await cartUtil.newCart(req.user.id)
+      const getItems = await util.findItemsByCart(cart.id)
 
-                return result
-            }
+      res.status(200).send(getItems)
+    } catch (err) {
+      next(err)
+    }
+  })
 
-            const getItems = await util.findItemsByCart(cart.id)
+  router.post('/my_cart/add_item', async (req, res, next) => {
+    const { productId } = req.body
 
-            res.status(200).send(getItems)
-        } catch(err) {
-            next(err)
-        }
-    })
+    try {
+      const cart = await cartUtil.findCartByUser(req.user.id)
 
-    router.post('/my_cart/add_item', async (req, res, next) => {
-        const { productId } = req.body
+      if (!cart) {
+        const result = await cartUtil.newCart(req.user.id)
 
-        try {
-            const cart = await cartUtil.findCartByUser(req.user.id)
+        return result
+      }
 
-            if(!cart) {
-                const result = await cartUtil.newCart(req.user.id)
+      const addItem = await cartUtil.addItemToCart(productId, cart.id)
+      res.status(200).send(addItem)
+    } catch (err) {
+      next(err)
+    }
+  })
 
-                return result
-            }
+  router.delete('/delete_item', async (req, res, next) => {
+    const { itemId } = req.body
 
-            const addItem = await cartUtil.addItemToCart(productId, cart.id)
-            res.status(200).send(addItem)
-        } catch(err) {
-            next(err)
-        }
-    })
+    console.log(req.user.id)
 
-    router.delete('/delete_item', async (req, res, next) => {
-        const { itemId } = req.body
+    try {
+      const deleteItem = await cartUtil.deleteItemFromCart(itemId)
 
-        console.log(itemId)
+      res.status(200).send(deleteItem)
+    } catch (err) {
+      next(err)
+    }
+  })
 
-        console.log(req.user.id)
+  router.post('/checkout', async (req, res, next) => {
+    const { cartId } = req.body
 
-        try {
-            const deleteItem = await cartUtil.deleteItemFromCart(itemId)
+    try {
+      const getItems = await cartUtil.getItemPrice(cartId)
 
-            console.log(deleteItem)
-            res.status(200).send(deleteItem)
-        } catch(err) {
-            next(err)
-        }
-    })
+      const total = getItems.reduce((total, item) => {
+        return (total += Number(item.price))
+      }, 0)
 
-    router.post('/checkout', async (req, res, next) => {
-        const { userId } = req.user.id
-        const { cartId } = req.body
+      const newOrder = await orderUtil.createOrder(total, req.user.id)
 
-        try{
-        const getItems = await cartUtil.getItemPrice(cartId)
-
-        const total = getItems.reduce((total, item) => {
-            return total += Number(item.price)
-        }, 0)
-
-        const newOrder = await orderUtil.createOrder(total, req.user.id)
-
-        const items = await getItems.map((item) => {
-        return [{
+      const items = await getItems.map((item) => {
+        return [
+          {
             quantity: Number(item.quantity),
             price: item.price,
             orderId: newOrder[0].id,
-            productId: item.product_id
-            },]
-        })
+            productId: item.product_id,
+          },
+        ]
+      })
 
-        const addItems = await orderUtil.addItems(items)
+      const addItems = await orderUtil.addItems(items)
 
-        //add payment logic at some point
+      //add payment logic at some point
 
-        cartUtil.checkedOut(cartId)
-        const order = await orderUtil.completeOrder(newOrder[0].id)
-        console.log(order)
+      cartUtil.checkedOut(cartId)
+      const order = await orderUtil.completeOrder(newOrder[0].id)
 
-        res.status(200).send(await orderUtil.getOrderById(newOrder[0].id))
-    } catch(err) {
-        next(err)
+      res.status(200).send(await orderUtil.getOrderById(newOrder[0].id))
+    } catch (err) {
+      next(err)
     }
-
-    })
-
+  })
 }
